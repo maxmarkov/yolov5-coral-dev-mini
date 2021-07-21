@@ -10,6 +10,8 @@ python download_models.py
 
 ## Step 1: Convert PyTorch model into TensorFlow Lite
 
-![Workflow diagram for model deployment](data/diagram.png)
+<img src="data/diagram.png" width="650" height="450">
+
+
 
 ## Step 2: Deploy model on Coral Dev Board Mini 
