@@ -21,7 +21,7 @@ def attempt_download(file, repo='ultralytics/yolov5'):
             try:
                 url = f'https://storage.googleapis.com/{repo}/ckpt/{name}'
                 print(f'Downloading {url} to {file}...')
-                os.system(f'curl -L {url} -o {file}')
+                os.system(f'curl -L {url} -o models/{file}')
             except:
                 if not file.exists() or file.stat().st_size < 1E6:  # check
                     file.unlink(missing_ok=True)  # remove partial downloads

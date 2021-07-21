@@ -5,7 +5,7 @@
 Download PyTorch models from YOLOv5 repository:
 
 ```
-python models/download_models.py
+python download_models.py
 ```
 
 ## Step 1: Convert PyTorch model into TensorFlow Lite
