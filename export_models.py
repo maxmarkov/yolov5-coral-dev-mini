@@ -1,7 +1,8 @@
-"""Export a YOLOv5 *.pt model to TorchScript, ONNX, CoreML formats
+"""Export a YOLOv5 *.pt model to ONNX formats
+     Modified version of export.py from yolov5 repository/ commit 63dd65e7edd96debbefa81e22f3d5cfb07dd2ba4 
 
 Usage:
-    $ python path/to/export.py --weights yolov5s.pt --img 640 --batch 1
+    $ python export_models.py --weights models/yolov5s.pt --img 640 --batch 1
 """
 
 import argparse
@@ -13,6 +14,8 @@ import torch
 import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
 
+sys.path.insert(0, './yolov5')
+
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
 
@@ -20,95 +23,64 @@ from models.common import Conv
 from models.yolo import Detect
 from models.experimental import attempt_load
 from utils.activations import Hardswish, SiLU
-from utils.general import colorstr, check_img_size, check_requirements, file_size, set_logging
+from utils.general import colorstr, check_img_size, set_logging, check_requirements#, file_size
 from utils.torch_utils import select_device
-
-
-def export_torchscript(model, img, file, optimize):
-    # TorchScript model export
-    prefix = colorstr('TorchScript:')
-    try:
-        print(f'\n{prefix} starting export with torch {torch.__version__}...')
-        f = file.with_suffix('.torchscript.pt')
-        ts = torch.jit.trace(model, img, strict=False)
-        (optimize_for_mobile(ts) if optimize else ts).save(f)
-        print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
-        return ts
-    except Exception as e:
-        print(f'{prefix} export failure: {e}')
 
 
 def export_onnx(model, img, file, opset, train, dynamic, simplify):
     # ONNX model export
     prefix = colorstr('ONNX:')
-    try:
-        check_requirements(('onnx', 'onnx-simplifier'))
-        import onnx
-
-        print(f'\n{prefix} starting export with onnx {onnx.__version__}...')
-        f = file.with_suffix('.onnx')
-        torch.onnx.export(model, img, f, verbose=False, opset_version=opset,
-                          training=torch.onnx.TrainingMode.TRAINING if train else torch.onnx.TrainingMode.EVAL,
-                          do_constant_folding=not train,
-                          input_names=['images'],
-                          output_names=['output'],
-                          dynamic_axes={'images': {0: 'batch', 2: 'height', 3: 'width'},  # shape(1,3,640,640)
-                                        'output': {0: 'batch', 1: 'anchors'}  # shape(1,25200,85)
-                                        } if dynamic else None)
-
-        # Checks
-        model_onnx = onnx.load(f)  # load onnx model
-        onnx.checker.check_model(model_onnx)  # check onnx model
-        # print(onnx.helper.printable_graph(model_onnx.graph))  # print
-
-        # Simplify
-        if simplify:
-            try:
-                import onnxsim
-
-                print(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
-                model_onnx, check = onnxsim.simplify(
-                    model_onnx,
-                    dynamic_input_shape=dynamic,
-                    input_shapes={'images': list(img.shape)} if dynamic else None)
-                assert check, 'assert check failed'
-                onnx.save(model_onnx, f)
-            except Exception as e:
-                print(f'{prefix} simplifier failure: {e}')
-        print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
-    except Exception as e:
-        print(f'{prefix} export failure: {e}')
-
-
-def export_coreml(model, img, file):
-    # CoreML model export
-    prefix = colorstr('CoreML:')
-    try:
-        import coremltools as ct
-
-        print(f'\n{prefix} starting export with coremltools {ct.__version__}...')
-        f = file.with_suffix('.mlmodel')
-        model.train()  # CoreML exports should be placed in model.train() mode
-        ts = torch.jit.trace(model, img, strict=False)  # TorchScript model
-        model = ct.convert(ts, inputs=[ct.ImageType('image', shape=img.shape, scale=1 / 255.0, bias=[0, 0, 0])])
-        model.save(f)
-        print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
-    except Exception as e:
-        print(f'{prefix} export failure: {e}')
+#    try:
+#        check_requirements(('onnx', 'onnx-simplifier'))
+#        import onnx
+#
+#        print(f'\n{prefix} starting export with onnx {onnx.__version__}...')
+#        f = file.with_suffix('.onnx')
+#        torch.onnx.export(model, img, f, verbose=False, opset_version=opset,
+#                          training=torch.onnx.TrainingMode.TRAINING if train else torch.onnx.TrainingMode.EVAL,
+#                          do_constant_folding=not train,
+#                          input_names=['images'],
+#                          output_names=['output'],
+#                          dynamic_axes={'images': {0: 'batch', 2: 'height', 3: 'width'},  # shape(1,3,640,640)
+#                                        'output': {0: 'batch', 1: 'anchors'}  # shape(1,25200,85)
+#                                        } if dynamic else None)
+#
+#        # Checks
+#        model_onnx = onnx.load(f)  # load onnx model
+#        onnx.checker.check_model(model_onnx)  # check onnx model
+#        # print(onnx.helper.printable_graph(model_onnx.graph))  # print
+#
+#        # Simplify
+#        if simplify:
+#            try:
+#                import onnxsim
+#
+#                print(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
+#                model_onnx, check = onnxsim.simplify(
+#                    model_onnx,
+#                    dynamic_input_shape=dynamic,
+#                    input_shapes={'images': list(img.shape)} if dynamic else None)
+#                assert check, 'assert check failed'
+#                onnx.save(model_onnx, f)
+#            except Exception as e:
+#                print(f'{prefix} simplifier failure: {e}')
+#        print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
+#    except Exception as e:
+#        print(f'{prefix} export failure: {e}')
 
 
 def run(weights='./yolov5s.pt',  # weights path
-        img_size=(640, 640),  # image (height, width)
-        batch_size=1,  # batch size
-        device='cpu',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-        include=('torchscript', 'onnx', 'coreml'),  # include formats
-        half=False,  # FP16 half-precision export
-        inplace=False,  # set YOLOv5 Detect() inplace=True
-        train=False,  # model.train() mode
-        optimize=False,  # TorchScript: optimize for mobile
-        dynamic=False,  # ONNX: dynamic axes
-        simplify=False,  # ONNX: simplify model
-        opset=12,  # ONNX: opset version
+        img_size=(640, 640),     # image (height, width)
+        batch_size=1,            # batch size
+        device='cpu',            # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        include=('onnx'),        # include formats
+        half=False,              # FP16 half-precision export
+        inplace=False,           # set YOLOv5 Detect() inplace=True
+        train=False,             # model.train() mode
+        optimize=False,          # TorchScript: optimize for mobile
+        dynamic=False,           # ONNX: dynamic axes
+        simplify=False,          # ONNX: simplify model
+        opset=12,                # ONNX: opset version
         ):
     t = time.time()
     include = [x.lower() for x in include]
@@ -129,7 +101,7 @@ def run(weights='./yolov5s.pt',  # weights path
     # Update model
     if half:
         img, model = img.half(), model.half()  # to FP16
-    model.train() if train else model.eval()  # training mode = no Detect() layer grid construction
+    model.train() if train else model.eval()   # training mode = no Detect() layer grid construction
     for k, m in model.named_modules():
         if isinstance(m, Conv):  # assign export-friendly activations
             if isinstance(m.act, nn.Hardswish):
@@ -143,15 +115,12 @@ def run(weights='./yolov5s.pt',  # weights path
 
     for _ in range(2):
         y = model(img)  # dry runs
-    print(f"\n{colorstr('PyTorch:')} starting from {weights} ({file_size(weights):.1f} MB)")
+#### Problem with file_size
+#    print(f"\n{colorstr('PyTorch:')} starting from {weights} ({file_size(weights):.1f} MB)")
 
     # Exports
-    if 'torchscript' in include:
-        export_torchscript(model, img, file, optimize)
     if 'onnx' in include:
         export_onnx(model, img, file, opset, train, dynamic, simplify)
-    if 'coreml' in include:
-        export_coreml(model, img, file)
 
     # Finish
     print(f'\nExport complete ({time.time() - t:.2f}s). Visualize with https://github.com/lutzroeder/netron.')
@@ -159,11 +128,11 @@ def run(weights='./yolov5s.pt',  # weights path
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default='./yolov5s.pt', help='weights path')
+    parser.add_argument('--weights', type=str, default='models/yolov5s.pt', help='weights path')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image (height, width)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--include', nargs='+', default=['torchscript', 'onnx', 'coreml'], help='include formats')
+    parser.add_argument('--include', nargs='+', default=['onnx'], help='include formats')
     parser.add_argument('--half', action='store_true', help='FP16 half-precision export')
     parser.add_argument('--inplace', action='store_true', help='set YOLOv5 Detect() inplace=True')
     parser.add_argument('--train', action='store_true', help='model.train() mode')
