@@ -17,7 +17,7 @@ cd yolov5 && git submodule init && git submodule update && git checkout tags/v5.
 Install all necessary requirements 
 
 ```
-pip install -r requirements && pip install onnx>=1.9.0
+pip install -r requirements.txt && pip install onnx>=1.9.0
 ```
 
 Download PyTorch models from YOLOv5 repository into models folder:
