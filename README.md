@@ -17,13 +17,13 @@ cd yolov5 && git submodule init && git submodule update && git checkout tags/v5.
 Install all necessary requirements 
 
 ```
-pip install -r requirements.txt && pip install onnx>=1.9.0
+pip install -r requirements.txt && pip install onnx>=1.9.0 && cd ..
 ```
 
 Download PyTorch models from YOLOv5 repository into models folder:
 
 ```
-cd .. && python3 download_models.py --weights yolov5s.pt yolov5s6.pt 
+python download_models.py --weights yolov5s.pt yolov5s6.pt 
 ```
 
 ## Step 1: Convert PyTorch model into TensorFlow Lite

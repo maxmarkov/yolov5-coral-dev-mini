@@ -20,9 +20,15 @@ if __name__ == '__main__':
 
     weights_repo = weights_640 + weights_1280
 
+    # folder to store your models
+    folder = 'models'
+
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
     for weights in opt.weights:
         if weights in weights_repo:
             attempt_download(weights)
-            shutil.move(src=weights, dst=os.path.join('models', weights))
+            shutil.move(src=weights, dst=os.path.join(folder, weights))
         else:
             print('File {} is not in YOLOv5 repository'.formatr(weights))
