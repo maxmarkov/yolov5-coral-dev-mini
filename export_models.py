@@ -23,50 +23,58 @@ from models.common import Conv
 from models.yolo import Detect
 from models.experimental import attempt_load
 from utils.activations import Hardswish, SiLU
-from utils.general import colorstr, check_img_size, set_logging, check_requirements#, file_size
+from utils.general import colorstr, check_img_size, set_logging, check_requirements#, file_size -> no such function in v5.0
 from utils.torch_utils import select_device
 
+def file_size(file):
+    '''
+    Function from utils.general import file size 
+    It is not present in the stable release v5.0
+    '''
+    # Return file size in MB
+    return Path(file).stat().st_size / 1e6
 
 def export_onnx(model, img, file, opset, train, dynamic, simplify):
     # ONNX model export
     prefix = colorstr('ONNX:')
-#    try:
-#        check_requirements(('onnx', 'onnx-simplifier'))
-#        import onnx
-#
-#        print(f'\n{prefix} starting export with onnx {onnx.__version__}...')
-#        f = file.with_suffix('.onnx')
-#        torch.onnx.export(model, img, f, verbose=False, opset_version=opset,
-#                          training=torch.onnx.TrainingMode.TRAINING if train else torch.onnx.TrainingMode.EVAL,
-#                          do_constant_folding=not train,
-#                          input_names=['images'],
-#                          output_names=['output'],
-#                          dynamic_axes={'images': {0: 'batch', 2: 'height', 3: 'width'},  # shape(1,3,640,640)
-#                                        'output': {0: 'batch', 1: 'anchors'}  # shape(1,25200,85)
-#                                        } if dynamic else None)
-#
-#        # Checks
-#        model_onnx = onnx.load(f)  # load onnx model
-#        onnx.checker.check_model(model_onnx)  # check onnx model
-#        # print(onnx.helper.printable_graph(model_onnx.graph))  # print
-#
-#        # Simplify
-#        if simplify:
-#            try:
-#                import onnxsim
-#
-#                print(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
-#                model_onnx, check = onnxsim.simplify(
-#                    model_onnx,
-#                    dynamic_input_shape=dynamic,
-#                    input_shapes={'images': list(img.shape)} if dynamic else None)
-#                assert check, 'assert check failed'
-#                onnx.save(model_onnx, f)
-#            except Exception as e:
-#                print(f'{prefix} simplifier failure: {e}')
-#        print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
-#    except Exception as e:
-#        print(f'{prefix} export failure: {e}')
+    try:
+        check_requirements(('onnx', 'onnx-simplifier'))
+        import onnx
+
+        print(f'\n{prefix} starting export with onnx {onnx.__version__}...')
+        f = file.with_suffix('.onnx')
+        torch.onnx.export(model, img, f, verbose=False, opset_version=opset,
+                          training=torch.onnx.TrainingMode.TRAINING if train else torch.onnx.TrainingMode.EVAL,
+                          do_constant_folding=not train,
+                          input_names=['images'],
+                          output_names=['output'],
+                          dynamic_axes={'images': {0: 'batch', 2: 'height', 3: 'width'},  # shape(1,3,640,640)
+                                        'output': {0: 'batch', 1: 'anchors'}  # shape(1,25200,85)
+                                        } if dynamic else None)
+
+        # Checks
+        model_onnx = onnx.load(f)                               # load onnx model
+        onnx.checker.check_model(model_onnx)                    # check onnx model
+        onnx.save(model_onnx, f)
+        #print(onnx.helper.printable_graph(model_onnx.graph))
+
+        ## Simplify
+        #if simplify:
+        #    try:
+        #        import onnxsim
+
+        #        print(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
+        #        model_onnx, check = onnxsim.simplify(
+        #            model_onnx,
+        #            dynamic_input_shape=dynamic,
+        #            input_shapes={'images': list(img.shape)} if dynamic else None)
+        #        assert check, 'assert check failed'
+        #        onnx.save(model_onnx, f)
+        #    except Exception as e:
+        #        print(f'{prefix} simplifier failure: {e}')
+        #print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
+    except Exception as e:
+        print(f'{prefix} export failure: {e}')
 
 
 def run(weights='./yolov5s.pt',  # weights path
@@ -115,8 +123,7 @@ def run(weights='./yolov5s.pt',  # weights path
 
     for _ in range(2):
         y = model(img)  # dry runs
-#### Problem with file_size
-#    print(f"\n{colorstr('PyTorch:')} starting from {weights} ({file_size(weights):.1f} MB)")
+    print(f"\n{colorstr('PyTorch:')} starting from {weights} ({file_size(weights):.1f} MB)")
 
     # Exports
     if 'onnx' in include:
