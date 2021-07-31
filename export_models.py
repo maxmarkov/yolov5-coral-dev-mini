@@ -26,6 +26,7 @@ from utils.activations import Hardswish, SiLU
 from utils.general import colorstr, check_img_size, set_logging, check_requirements#, file_size -> no such function in v5.0
 from utils.torch_utils import select_device
 
+
 def file_size(file):
     '''
     Function from utils.general import file size 
@@ -55,43 +56,66 @@ def export_onnx(model, img, file, opset, train, dynamic, simplify):
         # Checks
         model_onnx = onnx.load(f)                               # load onnx model
         onnx.checker.check_model(model_onnx)                    # check onnx model
-        onnx.save(model_onnx, f)
+        #onnx.save(model_onnx, f)
         #print(onnx.helper.printable_graph(model_onnx.graph))
 
-        ## Simplify
-        #if simplify:
-        #    try:
-        #        import onnxsim
+        # Simplify
+        if simplify:
+            try:
+                import onnxsim
 
-        #        print(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
-        #        model_onnx, check = onnxsim.simplify(
-        #            model_onnx,
-        #            dynamic_input_shape=dynamic,
-        #            input_shapes={'images': list(img.shape)} if dynamic else None)
-        #        assert check, 'assert check failed'
-        #        onnx.save(model_onnx, f)
-        #    except Exception as e:
-        #        print(f'{prefix} simplifier failure: {e}')
-        #print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
+                print(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
+                model_onnx, check = onnxsim.simplify(
+                    model_onnx,
+                    dynamic_input_shape=dynamic,
+                    input_shapes={'images': list(img.shape)} if dynamic else None)
+                assert check, 'assert check failed'
+                onnx.save(model_onnx, f)
+            except Exception as e:
+                print(f'{prefix} simplifier failure: {e}')
+        print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
+
     except Exception as e:
         print(f'{prefix} export failure: {e}')
 
 
-def run(weights='./yolov5s.pt',  # weights path
-        img_size=(640, 640),     # image (height, width)
-        batch_size=1,            # batch size
-        device='cpu',            # cuda device, i.e. 0 or 0,1,2,3 or cpu
-        include=('onnx'),        # include formats
-        half=False,              # FP16 half-precision export
-        inplace=False,           # set YOLOv5 Detect() inplace=True
-        train=False,             # model.train() mode
-        optimize=False,          # TorchScript: optimize for mobile
-        dynamic=False,           # ONNX: dynamic axes
-        simplify=False,          # ONNX: simplify model
-        opset=12,                # ONNX: opset version
+def export_tfgraph(file):
+    '''
+    Convert model from ONNX to TensoFlow representation (.pb) using onnx_tf
+    '''
+    import onnx
+    import onnx_tf
+
+    f = file.with_suffix('.onnx')
+
+    model_onnx = onnx.load(f)
+
+    prefix = colorstr('ONNX_TF:')
+    print(f'\n{prefix} starting export with onnx_tf {onnx_tf.__version__}...')
+    try:
+        tf_rep = onnx_tf.backend.prepare(model_onnx, strict=False)   # prepare tf representation
+        tf_rep.export_graph('models/tf_graph')                       # export the model graph
+        print(f'{prefix} export success, saved as {f}')
+    except Exception as e:
+        print(f'{prefix} export failure: {e}')
+
+
+def run(weights='./yolov5s.pt',       # weights path
+        img_size=(640, 640),          # image (height, width)
+        batch_size=1,                 # batch size
+        device='cpu',                 # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        include=('onnx', 'tfgraph'),  # include formats
+        half=False,                   # FP16 half-precision export
+        inplace=False,                # set YOLOv5 Detect() inplace=True
+        train=False,                  # model.train() mode
+        optimize=False,               # TorchScript: optimize for mobile
+        dynamic=False,                # ONNX: dynamic axes
+        simplify=False,               # ONNX: simplify model
+        opset=12,                     # ONNX: opset version
         ):
     t = time.time()
     include = [x.lower() for x in include]
+
     img_size *= 2 if len(img_size) == 1 else 1  # expand
     file = Path(weights)
 
@@ -125,9 +149,15 @@ def run(weights='./yolov5s.pt',  # weights path
         y = model(img)  # dry runs
     print(f"\n{colorstr('PyTorch:')} starting from {weights} ({file_size(weights):.1f} MB)")
 
+    # ONNX must be run first to convert to TensorFlow
+    if 'tfgraph' in include and 'onnx' not in include:
+        include.append('onnx')
+
     # Exports
     if 'onnx' in include:
         export_onnx(model, img, file, opset, train, dynamic, simplify)
+    if 'tfgraph' in include:
+        export_tfgraph(file)
 
     # Finish
     print(f'\nExport complete ({time.time() - t:.2f}s). Visualize with https://github.com/lutzroeder/netron.')
@@ -139,7 +169,7 @@ def parse_opt():
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image (height, width)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--include', nargs='+', default=['onnx'], help='include formats')
+    parser.add_argument('--include', nargs='+', default=['onnx', 'tfgraph'], help='include formats')
     parser.add_argument('--half', action='store_true', help='FP16 half-precision export')
     parser.add_argument('--inplace', action='store_true', help='set YOLOv5 Detect() inplace=True')
     parser.add_argument('--train', action='store_true', help='model.train() mode')

@@ -16,13 +16,13 @@ git clone https://github.com/maxmarkov/yolov5-coral-dev-mini.git
 This repository uses YOLOv5 as submodule. Clone the submodule and checkout the latest stable release (v5.0 on July 24)
 
 ```
-cd yolov5 && git submodule init && git submodule update && git checkout tags/v5.0
+git submodule init && git submodule update && cd yolov5 && git checkout tags/v5.0
 ```
 
 Install all necessary requirements 
 
 ```
-pip install -r requirements.txt && cd .. && pip install -r requirements.txt
+cd .. && pip install -r yolov5/requirements.txt && pip install -r requirements.txt
 ```
 
 Download PyTorch models from YOLOv5 repository into models folder:
@@ -33,13 +33,25 @@ python download_models.py --weights yolov5s.pt yolov5s6.pt
 
 ## Step 1: Convert PyTorch model into TensorFlow Lite
 
+Coral Dev Board requires the model to be in a TensorFlow Lite format. 
 Custom models should be placed into models folder.
 
+<details><summary>Convertion diagram</summary>
+<p>
+
 <img src="data/diagram.png" width="650" height="450">
+
+</p>
+</details>
 
 ### Method 1
 
 ### Method 2
 
+PyTorch to ONNX to TensorFlow representation:
+
+```
+python export_models.py --weights models/yolov5s.pt --img 320 --batch 1 --dynamic
+```
 
 ## Step 2: Deploy model on Coral Dev Board Mini 
