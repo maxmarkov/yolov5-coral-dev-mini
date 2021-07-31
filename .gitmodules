@@ -1,6 +1,6 @@
 [submodule "yolov5"]
 	path = yolov5
 	url = https://github.com/ultralytics/yolov5.git
-[submodule "yolov5-convertion"]
-	path = yolov5-convertion
+[submodule "yolov5-conversion"]
+	path = yolov5-conversion
 	url = https://github.com/zldrobit/yolov5.git

@@ -28,7 +28,7 @@ cd .. && pip install -r yolov5/requirements.txt && pip install -r requirements.t
 Download PyTorch models from YOLOv5 repository into models folder:
 
 ```
-python download_models.py --weights yolov5s.pt yolov5s6.pt 
+python download.py --weights yolov5s.pt yolov5s6.pt 
 ```
 
 ## Step 1: Convert PyTorch model into TensorFlow Lite
@@ -49,15 +49,20 @@ Custom models should be placed into models folder.
 Conversion via keras using [this repository](https://github.com/zldrobit/yolov5)
 
 ```
-cd yolov5-convertion && python3 models/tf.py --weights ../models/yolov5s.pt --cfg models/yolov5s.yaml --img 320 
+cd yolov5-conversion && python3 models/tf.py --weights ../models/yolov5s.pt --cfg models/yolov5s.yaml --img 320 
 ```
 
-### Method 2
+### Method 2 (in progress)
 
 PyTorch to ONNX to TensorFlow representation:
 
 ```
-python export_models.py --weights models/yolov5s.pt --img 320 --batch 1 --dynamic
+python export.py --weights models/yolov5s.pt --img 320 --batch 1 --dynamic
 ```
+
+### Method 3
+
+Conversion via OpenVINO IR using [this repository](https://github.com/PINTO0309/openvino2tensorflow)
+
 
 ## Step 2: Deploy model on Coral Dev Board Mini 
