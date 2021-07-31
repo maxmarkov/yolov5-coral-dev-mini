@@ -46,6 +46,12 @@ Custom models should be placed into models folder.
 
 ### Method 1
 
+Convertion via keras using [this repository](https://github.com/zldrobit/yolov5)
+
+```
+cd yolov5-convertion && python3 models/tf.py --weights ../models/yolov5s.pt --cfg models/yolov5s.yaml --img 320 
+```
+
 ### Method 2
 
 PyTorch to ONNX to TensorFlow representation:
