@@ -1,5 +1,10 @@
 # Export YOLOv5 to Google Coral Dev Mini
 
+<p align="center">
+  <a href="https://github.com/ultralytics/yolov5/discussions/3213">
+  <img width="850" src="https://github.com/ultralytics/yolov5/releases/download/v1.0/banner-export-competition.png"></a>
+</p>
+
 ## Step 0: Preparation. Download models.
 
 Clone the repository implementing inference with YOLOv5 models on Google Coral Dev Board Mini
@@ -32,6 +37,9 @@ Custom models should be placed into models folder.
 
 <img src="data/diagram.png" width="650" height="450">
 
+### Method 1
+
+### Method 2
 
 
 ## Step 2: Deploy model on Coral Dev Board Mini 
