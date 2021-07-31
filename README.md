@@ -36,7 +36,7 @@ python download_models.py --weights yolov5s.pt yolov5s6.pt
 Coral Dev Board requires the model to be in a TensorFlow Lite format. 
 Custom models should be placed into models folder.
 
-<details><summary>Convertion diagram</summary>
+<details><summary>Conversion diagram</summary>
 <p>
 
 <img src="data/diagram.png" width="650" height="450">
@@ -46,7 +46,7 @@ Custom models should be placed into models folder.
 
 ### Method 1
 
-Convertion via keras using [this repository](https://github.com/zldrobit/yolov5)
+Conversion via keras using [this repository](https://github.com/zldrobit/yolov5)
 
 ```
 cd yolov5-convertion && python3 models/tf.py --weights ../models/yolov5s.pt --cfg models/yolov5s.yaml --img 320 
