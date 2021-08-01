@@ -1,6 +1,11 @@
 """Export a YOLOv5 *.pt model to ONNX formats
      Modified version of export.py from yolov5 repository/ commit 63dd65e7edd96debbefa81e22f3d5cfb07dd2ba4 
 
+   ADDED: 
+      - Function export_tf() to convert ONNX to TF representation using onnx_tf
+      - Function export_tflite() to convert TF representation to TFLite using TF converter
+      - Function export_openvino() to convert ONNX to OpenVINO IR representaion in docker (Docker must be installed!)
+
 Usage:
     $ python export_models.py --weights models/yolov5s.pt --img 640 --batch 1
 """
@@ -35,6 +40,7 @@ def file_size(file):
     # Return file size in MB
     return Path(file).stat().st_size / 1e6
 
+
 def export_onnx(model, img, file, opset, train, dynamic, simplify):
     # ONNX model export
     prefix = colorstr('ONNX:')
@@ -56,8 +62,6 @@ def export_onnx(model, img, file, opset, train, dynamic, simplify):
         # Checks
         model_onnx = onnx.load(f)                               # load onnx model
         onnx.checker.check_model(model_onnx)                    # check onnx model
-        #onnx.save(model_onnx, f)
-        #print(onnx.helper.printable_graph(model_onnx.graph))
 
         # Simplify
         if simplify:
@@ -79,7 +83,7 @@ def export_onnx(model, img, file, opset, train, dynamic, simplify):
         print(f'{prefix} export failure: {e}')
 
 
-def export_tfgraph(file):
+def export_tf(file):
     '''
     Convert model from ONNX to TensoFlow representation (.pb) using onnx_tf
     '''
@@ -94,24 +98,50 @@ def export_tfgraph(file):
     print(f'\n{prefix} starting export with onnx_tf {onnx_tf.__version__}...')
     try:
         tf_rep = onnx_tf.backend.prepare(model_onnx, strict=False)   # prepare tf representation
-        tf_rep.export_graph('models/tf_graph')                       # export the model graph
+        tf_rep.export_graph('models')                                # export the model graph
         print(f'{prefix} export success, saved as {f}')
     except Exception as e:
         print(f'{prefix} export failure: {e}')
 
 
-def run(weights='./yolov5s.pt',       # weights path
-        img_size=(640, 640),          # image (height, width)
-        batch_size=1,                 # batch size
-        device='cpu',                 # cuda device, i.e. 0 or 0,1,2,3 or cpu
-        include=('onnx', 'tfgraph'),  # include formats
-        half=False,                   # FP16 half-precision export
-        inplace=False,                # set YOLOv5 Detect() inplace=True
-        train=False,                  # model.train() mode
-        optimize=False,               # TorchScript: optimize for mobile
-        dynamic=False,                # ONNX: dynamic axes
-        simplify=False,               # ONNX: simplify model
-        opset=12,                     # ONNX: opset version
+def export_tflite(file):
+    '''
+    Convert model from TensoFlow representation (.pb) to TensorFlow Lite (.tflite)
+    '''
+    import tensorflow as tf
+
+    f = file.with_suffix('.tflite')
+
+    prefix = colorstr('TensorFlow:')
+    print(f'\n{prefix} starting export with TensorFlow {tf.__version__}...')
+    try:
+        # Convert the model
+        converter = tf.lite.TFLiteConverter.from_saved_model('models')
+        # TFLite builtin operator library only supports a limited number of TF operators 
+        converter.target_spec.supported_ops = [
+          tf.lite.OpsSet.TFLITE_BUILTINS,        # enable TensorFlow Lite ops.
+          tf.lite.OpsSet.SELECT_TF_OPS           # enable TensorFlow ops.
+        ]
+        tflite_model = converter.convert()
+        
+        open(f, "wb").write(tflite_model)
+    except Exception as e:
+        print(f'{prefix} export failure: {e}')
+
+
+
+def run(weights='./yolov5s.pt',          # weights path
+        img_size=(640, 640),             # image (height, width)
+        batch_size=1,                    # batch size
+        device='cpu',                    # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        include=('onnx','tf','tflite'),  # include formats
+        half=False,                      # FP16 half-precision export
+        inplace=False,                   # set YOLOv5 Detect() inplace=True
+        train=False,                     # model.train() mode
+        optimize=False,                  # TorchScript: optimize for mobile
+        dynamic=False,                   # ONNX: dynamic axes
+        simplify=False,                  # ONNX: simplify model
+        opset=12,                        # ONNX: opset version
         ):
     t = time.time()
     include = [x.lower() for x in include]
@@ -149,15 +179,18 @@ def run(weights='./yolov5s.pt',       # weights path
         y = model(img)  # dry runs
     print(f"\n{colorstr('PyTorch:')} starting from {weights} ({file_size(weights):.1f} MB)")
 
-    # ONNX must be run first to convert to TensorFlow
-    if 'tfgraph' in include and 'onnx' not in include:
-        include.append('onnx')
+    ## TODO: need to be more clear. ONNX must be run first to convert to TensorFlow
+    #if 'tf' in include and 'onnx' not in include:
+    #    include.append('onnx')
 
     # Exports
     if 'onnx' in include:
         export_onnx(model, img, file, opset, train, dynamic, simplify)
-    if 'tfgraph' in include:
-        export_tfgraph(file)
+    if 'tf' in include:
+        export_tf(file)
+    if 'tflite' in include:
+        export_tflite(file)
+
 
     # Finish
     print(f'\nExport complete ({time.time() - t:.2f}s). Visualize with https://github.com/lutzroeder/netron.')
@@ -169,7 +202,7 @@ def parse_opt():
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image (height, width)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--include', nargs='+', default=['onnx', 'tfgraph'], help='include formats')
+    parser.add_argument('--include', nargs='+', default=['onnx', 'tf', 'tflite'], help='include formats')
     parser.add_argument('--half', action='store_true', help='FP16 half-precision export')
     parser.add_argument('--inplace', action='store_true', help='set YOLOv5 Detect() inplace=True')
     parser.add_argument('--train', action='store_true', help='model.train() mode')

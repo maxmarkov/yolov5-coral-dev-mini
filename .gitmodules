@@ -4,3 +4,6 @@
 [submodule "yolov5-conversion"]
 	path = yolov5-conversion
 	url = https://github.com/zldrobit/yolov5.git
+[submodule "openvino2tensorflow"]
+	path = openvino2tensorflow
+	url = https://github.com/PINTO0309/openvino2tensorflow.git

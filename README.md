@@ -44,7 +44,15 @@ Custom models should be placed into models folder.
 </p>
 </details>
 
-### Method 1
+### Method 1 (via TensorFlow)
+
+PyTorch to ONNX to TensorFlow to TensorFlow Lite:
+
+```
+python export.py --weights models/yolov5s.pt --img 320 --batch 1 --dynamic
+```
+
+### Method 2 (via Keras)
 
 Conversion via keras using [this repository](https://github.com/zldrobit/yolov5)
 
@@ -52,15 +60,7 @@ Conversion via keras using [this repository](https://github.com/zldrobit/yolov5)
 cd yolov5-conversion && python3 models/tf.py --weights ../models/yolov5s.pt --cfg models/yolov5s.yaml --img 320 
 ```
 
-### Method 2 (in progress)
-
-PyTorch to ONNX to TensorFlow representation:
-
-```
-python export.py --weights models/yolov5s.pt --img 320 --batch 1 --dynamic
-```
-
-### Method 3
+### Method 3 (via OpenVINO IR)
 
 Conversion via OpenVINO IR using [this repository](https://github.com/PINTO0309/openvino2tensorflow)
 
