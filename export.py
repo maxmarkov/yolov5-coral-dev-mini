@@ -128,20 +128,39 @@ def export_tflite(file):
     except Exception as e:
         print(f'{prefix} export failure: {e}')
 
+def export_openvino(file):
+    '''
+    Convert model from ONNX to OpenVINO representation using docker
+    '''
+    import subprocess
+
+    f = file.with_suffix('.onnx')
+
+    prefix = colorstr('ONNX_VINO:')
+
+    docker_command = 'docker run --rm -v $PWD/models:/home/openvino/models --user "$(id -u):$(id -g)" -w /home/openvino openvino/ubuntu20_dev:latest ' + '/bin/bash -c "python3 /opt/intel/openvino/deployment_tools/model_optimizer/mo.py --progress --input_shape [1,3,320,320] --input_model models/yolov5s.onnx --output_dir models/yolov5_openvino --data_type half"'
+
+    print(f'\n{prefix} starting export with openvino...')
+    try:
+        with open("docker.log", "a") as output:
+           subprocess.call(docker_command, shell=True, stdout=output, stderr=output)
+        print(f'{prefix} export success, saved as {f}')
+    except Exception as e:
+        print(f'{prefix} export failure: {e}')
 
 
-def run(weights='./yolov5s.pt',          # weights path
-        img_size=(640, 640),             # image (height, width)
-        batch_size=1,                    # batch size
-        device='cpu',                    # cuda device, i.e. 0 or 0,1,2,3 or cpu
-        include=('onnx','tf','tflite'),  # include formats
-        half=False,                      # FP16 half-precision export
-        inplace=False,                   # set YOLOv5 Detect() inplace=True
-        train=False,                     # model.train() mode
-        optimize=False,                  # TorchScript: optimize for mobile
-        dynamic=False,                   # ONNX: dynamic axes
-        simplify=False,                  # ONNX: simplify model
-        opset=12,                        # ONNX: opset version
+def run(weights='./yolov5s.pt',                     # weights path
+        img_size=(640, 640),                        # image (height, width)
+        batch_size=1,                               # batch size
+        device='cpu',                               # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        include=('onnx','tf','tflite','openvino'),  # include formats
+        half=False,                                 # FP16 half-precision export
+        inplace=False,                              # set YOLOv5 Detect() inplace=True
+        train=False,                                # model.train() mode
+        optimize=False,                             # TorchScript: optimize for mobile
+        dynamic=False,                              # ONNX: dynamic axes
+        simplify=False,                             # ONNX: simplify model
+        opset=12,                                   # ONNX: opset version
         ):
     t = time.time()
     include = [x.lower() for x in include]
@@ -190,7 +209,8 @@ def run(weights='./yolov5s.pt',          # weights path
         export_tf(file)
     if 'tflite' in include:
         export_tflite(file)
-
+    if 'openvino' in include:
+        export_openvino(file)
 
     # Finish
     print(f'\nExport complete ({time.time() - t:.2f}s). Visualize with https://github.com/lutzroeder/netron.')
@@ -202,7 +222,7 @@ def parse_opt():
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image (height, width)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--include', nargs='+', default=['onnx', 'tf', 'tflite'], help='include formats')
+    parser.add_argument('--include', nargs='+', default=['onnx', 'tf', 'tflite','openvino'], help='include formats')
     parser.add_argument('--half', action='store_true', help='FP16 half-precision export')
     parser.add_argument('--inplace', action='store_true', help='set YOLOv5 Detect() inplace=True')
     parser.add_argument('--train', action='store_true', help='model.train() mode')
