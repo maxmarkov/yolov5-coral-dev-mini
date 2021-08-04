@@ -5,12 +5,17 @@
   <img width="850" src="https://github.com/ultralytics/yolov5/releases/download/v1.0/banner-export-competition.png"></a>
 </p>
 
-# Table of contents:
 
-- [Step 0: Preparation. Download models](Step 0: Preparation. Download models.)
-- [Step 1: Convert PyTorch model into TensorFlow Lite](Step 1: Convert PyTorch model into TensorFlow Lite)
-- [Step 2: Deploy model on Coral Dev Board Mini](Step 2: Deploy model on Coral Dev Board Mini) 
+Table of contents
+=================
+- [Step 0: Preparation. Download models](#preparation)
+- [Step 1: Convert PyTorch model into TensorFlow Lite](#conversion)
+  * [Method 1: via TensorFlow](#convert-tf)
+  * [Method 2: via Keras](#convert-keras)
+  * [Method 3: via OpenVino](#convert-vino)
+- [Step 2: Deploy model on Coral Dev Board Mini](#deployment) 
 
+<a name="preparation"></a>
 ## Step 0: Preparation. Download models.
 
 Clone the repository implementing inference with YOLOv5 models on Google Coral Dev Board Mini
@@ -36,11 +41,15 @@ Download PyTorch models from YOLOv5 repository into models folder:
 ```
 python download.py --weights yolov5s.pt yolov5s6.pt 
 ```
-
+<a name="conversion"></a>
 ## Step 1: Convert PyTorch model into TensorFlow Lite
 
 Coral Dev Board requires the model to be in a TensorFlow Lite format. 
 Custom models should be placed into models folder.
+
+<a name="convert-tf"></a>
+### Method 1 (via TensorFlow)
+
 
 <details><summary>Conversion diagram</summary>
 <p>
@@ -50,14 +59,13 @@ Custom models should be placed into models folder.
 </p>
 </details>
 
-### Method 1 (via TensorFlow)
-
 PyTorch to ONNX to TensorFlow to TensorFlow Lite:
 
 ```
 python export.py --weights models/yolov5s.pt --img 320 --batch 1 --dynamic
 ```
 
+<a name="convert-keras"></a>
 ### Method 2 (via Keras)
 
 Conversion via keras using [this repository](https://github.com/zldrobit/yolov5)
@@ -66,6 +74,7 @@ Conversion via keras using [this repository](https://github.com/zldrobit/yolov5)
 cd yolov5-conversion && python3 models/tf.py --weights ../models/yolov5s.pt --cfg models/yolov5s.yaml --img 320 
 ```
 
+<a name="convert-vino"></a>
 ### Method 3 (via OpenVINO IR)
 
 Conversion via OpenVINO IR using [this repository](https://github.com/PINTO0309/openvino2tensorflow)
@@ -75,6 +84,7 @@ python export.py --weights models/yolov5s.pt --img 320 --batch 1 --dynamic onnx 
 
 ```
 
+<a name="deployment"></a>
 ## Step 2: Deploy model on Coral Dev Board Mini 
 
 ```
