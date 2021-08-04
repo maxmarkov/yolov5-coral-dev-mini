@@ -65,6 +65,8 @@ PyTorch to ONNX to TensorFlow to TensorFlow Lite:
 python export.py --weights models/yolov5s.pt --img 320 --batch 1 --dynamic
 ```
 
+**Download already converted files**: [onnx](https://drive.google.com/drive/folders/16mC7g1IFVg16HW6ivrn2H148xbGnHtDb?usp=sharing) | [tf](https://drive.google.com/drive/folders/1PZuDDC5TMdiTx_y6l6ultq05Bt2syEt4?usp=sharing) | [tflite](https://drive.google.com/drive/folders/18rw0fv1VmqqUHHjdgU9zbYGkJMY6nJ-z?usp=sharing)
+
 <a name="convert-keras"></a>
 ### Method 2 (via Keras)
 
