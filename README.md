@@ -5,6 +5,12 @@
   <img width="850" src="https://github.com/ultralytics/yolov5/releases/download/v1.0/banner-export-competition.png"></a>
 </p>
 
+# Table of contents:
+
+- [Step 0: Preparation. Download models](Step 0: Preparation. Download models.)
+- [Step 1: Convert PyTorch model into TensorFlow Lite](Step 1: Convert PyTorch model into TensorFlow Lite)
+- [Step 2: Deploy model on Coral Dev Board Mini](Step 2: Deploy model on Coral Dev Board Mini) 
+
 ## Step 0: Preparation. Download models.
 
 Clone the repository implementing inference with YOLOv5 models on Google Coral Dev Board Mini
@@ -64,5 +70,13 @@ cd yolov5-conversion && python3 models/tf.py --weights ../models/yolov5s.pt --cf
 
 Conversion via OpenVINO IR using [this repository](https://github.com/PINTO0309/openvino2tensorflow)
 
+```
+python export.py --weights models/yolov5s.pt --img 320 --batch 1 --dynamic onnx openvino
+
+```
 
 ## Step 2: Deploy model on Coral Dev Board Mini 
+
+```
+python detect.py --weights models/yolov5s.tflite
+```
